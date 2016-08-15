@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://platform.api.update.company1c.com" xmlns:ns1="http://schemas.xmlsoap.org/soap/http" name="UpdatePlatformApiImplService" targetNamespace="http://platform.api.update.company1c.com" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xs:schema elementFormDefault="unqualified" targetNamespace="http://platform.api.update.company1c.com" version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+      <xs:element name="MapElements" type="tns:MapElements" />
+      <xs:element name="PlatformUpdateInfoRequest" type="tns:PlatformUpdateInfoRequest" />
+      <xs:element name="PlatformUpdateInfoResult" type="tns:PlatformUpdateInfoResult" />
+      <xs:element name="PlatformUpdateRequest" type="tns:PlatformUpdateRequest" />
+      <xs:element name="PlatformUpdateResult" type="tns:PlatformUpdateResult" />
+      <xs:element name="getPlatformUpdate" type="tns:getPlatformUpdate" />
+      <xs:element name="getPlatformUpdateInfo" type="tns:getPlatformUpdateInfo" />
+      <xs:element name="getPlatformUpdateInfoResponse" type="tns:getPlatformUpdateInfoResponse" />
+      <xs:element name="getPlatformUpdateResponse" type="tns:getPlatformUpdateResponse" />
+      <xs:complexType name="getPlatformUpdate">
+        <xs:sequence>
+          <xs:element minOccurs="0" form="qualified" name="platformUpdateRequest" type="tns:PlatformUpdateRequest" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="PlatformUpdateRequest">
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" form="qualified" name="additionalParameters" type="tns:MapElements" />
+        </xs:sequence>
+        <xs:attribute name="login" type="xs:string" use="required" />
+        <xs:attribute name="password" type="xs:string" use="required" />
+        <xs:attribute name="distributionUin" type="xs:string" use="required" />
+      </xs:complexType>
+      <xs:complexType name="MapElements">
+        <xs:sequence />
+        <xs:attribute name="key" type="xs:string" use="required" />
+        <xs:attribute name="value" type="xs:string" use="required" />
+      </xs:complexType>
+      <xs:complexType name="getPlatformUpdateResponse">
+        <xs:sequence>
+          <xs:element minOccurs="0" form="qualified" name="platformUpdateResult" type="tns:PlatformUpdateResult" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="PlatformUpdateResult">
+        <xs:sequence>
+          <xs:element form="qualified" name="errorMessage" type="xs:string" />
+          <xs:element minOccurs="0" maxOccurs="unbounded" form="qualified" name="additionalParameters" type="tns:MapElements" />
+        </xs:sequence>
+        <xs:attribute name="errorName" type="xs:string" use="required" />
+        <xs:attribute name="downloadUrl" type="xs:string" use="required" />
+      </xs:complexType>
+      <xs:complexType name="getPlatformUpdateInfo">
+        <xs:sequence>
+          <xs:element minOccurs="0" form="qualified" name="platformUpdateInfoRequest" type="tns:PlatformUpdateInfoRequest" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="PlatformUpdateInfoRequest">
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" form="qualified" name="additionalParameters" type="tns:MapElements" />
+        </xs:sequence>
+        <xs:attribute name="configurationName" type="xs:string" use="required" />
+        <xs:attribute name="versionNumber" type="xs:string" use="required" />
+      </xs:complexType>
+      <xs:complexType name="getPlatformUpdateInfoResponse">
+        <xs:sequence>
+          <xs:element minOccurs="0" form="qualified" name="platformUpdateInfoResult" type="tns:PlatformUpdateInfoResult" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="PlatformUpdateInfoResult">
+        <xs:sequence>
+          <xs:element form="qualified" name="errorMessage" type="xs:string" />
+          <xs:element minOccurs="0" maxOccurs="unbounded" form="qualified" name="additionalParameters" type="tns:MapElements" />
+        </xs:sequence>
+        <xs:attribute name="errorName" type="xs:string" use="required" />
+        <xs:attribute name="platformVersion" type="xs:string" use="required" />
+        <xs:attribute name="transitionInfoUrl" type="xs:string" use="required" />
+        <xs:attribute name="distributionUin" type="xs:string" use="required" />
+        <xs:attribute name="size" type="xs:long" use="required" />
+      </xs:complexType>
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="getPlatformUpdateResponse">
+    <wsdl:part name="parameters" element="tns:getPlatformUpdateResponse" />
+  </wsdl:message>
+  <wsdl:message name="getPlatformUpdate">
+    <wsdl:part name="parameters" element="tns:getPlatformUpdate" />
+  </wsdl:message>
+  <wsdl:message name="getPlatformUpdateInfoResponse">
+    <wsdl:part name="parameters" element="tns:getPlatformUpdateInfoResponse" />
+  </wsdl:message>
+  <wsdl:message name="getPlatformUpdateInfo">
+    <wsdl:part name="parameters" element="tns:getPlatformUpdateInfo" />
+  </wsdl:message>
+  <wsdl:portType name="UpdatePlatformApi">
+    <wsdl:operation name="getPlatformUpdate">
+      <wsdl:input name="getPlatformUpdate" message="tns:getPlatformUpdate" />
+      <wsdl:output name="getPlatformUpdateResponse" message="tns:getPlatformUpdateResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="getPlatformUpdateInfo">
+      <wsdl:input name="getPlatformUpdateInfo" message="tns:getPlatformUpdateInfo" />
+      <wsdl:output name="getPlatformUpdateInfoResponse" message="tns:getPlatformUpdateInfoResponse" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="UpdatePlatformApiImplServiceSoapBinding" type="tns:UpdatePlatformApi">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="getPlatformUpdate">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="getPlatformUpdate">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="getPlatformUpdateResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getPlatformUpdateInfo">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="getPlatformUpdateInfo">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="getPlatformUpdateInfoResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="UpdatePlatformApiImplService">
+    <wsdl:port name="UpdatePlatformApiImplPort" binding="tns:UpdatePlatformApiImplServiceSoapBinding">
+      <soap:address location="https://update-api.1c.ru/update-platform/ws/platform" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

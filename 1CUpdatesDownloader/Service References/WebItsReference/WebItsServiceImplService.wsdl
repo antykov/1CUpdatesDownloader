@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="https://ws.webits.onec.ru" xmlns:ns1="http://schemas.xmlsoap.org/soap/http" name="WebItsServiceImplService" targetNamespace="https://ws.webits.onec.ru" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="https://ws.webits.onec.ru" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+      <xs:element name="processRequest" type="tns:ProcessRequestType" />
+      <xs:element name="processResponse" type="tns:ProcessResponseType" />
+      <xs:element name="testRequest" type="xs:string" />
+      <xs:element name="testResponse" type="tns:Parameters" />
+      <xs:complexType name="Parameters">
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" name="parameter" type="tns:Parameter" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="Parameter">
+        <xs:sequence>
+          <xs:element name="index" nillable="true" type="xs:int" />
+          <xs:element name="bp" nillable="true" type="xs:string" />
+          <xs:element name="name" nillable="true" type="xs:string" />
+          <xs:element name="type" nillable="true" type="xs:string" />
+          <xs:element name="value" nillable="true" type="xs:string" />
+          <xs:element name="parameters" nillable="true" type="tns:Parameters" />
+          <xs:element name="commands" nillable="true" type="tns:Commands" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="Commands">
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" name="command" type="tns:Command" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="Command">
+        <xs:sequence>
+          <xs:element name="name" nillable="true" type="xs:string" />
+          <xs:element name="parameters" nillable="true" type="tns:Parameters" />
+          <xs:element name="variable" nillable="true" type="xs:string" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="ProcessResponseType">
+        <xs:sequence>
+          <xs:element name="commands" type="tns:Commands" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="ProcessRequestType">
+        <xs:sequence>
+          <xs:element name="parameters" nillable="true" type="tns:Parameters" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:element name="InputParametersException" type="tns:InputParametersException" />
+      <xs:complexType name="InputParametersException">
+        <xs:sequence />
+      </xs:complexType>
+      <xs:element name="isConfigurationSupported" nillable="true" type="xs:string" />
+      <xs:element name="isConfigurationSupportedResponse" nillable="true" type="xs:boolean" />
+      <xs:element name="sendmailParams" nillable="true" type="tns:Parameters" />
+      <xs:element name="listbp" nillable="true" type="tns:ProcessRequestType" />
+      <xs:element name="isHaveIts" nillable="true" type="xs:string" />
+      <xs:element name="isReadyResponse" nillable="true" type="xs:string" />
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="testResponse">
+    <wsdl:part name="params" element="tns:testResponse" />
+  </wsdl:message>
+  <wsdl:message name="sendmailtonet">
+    <wsdl:part name="params" element="tns:sendmailParams" />
+  </wsdl:message>
+  <wsdl:message name="isConfigurationSupported">
+    <wsdl:part name="isConfigurationSupported" element="tns:isConfigurationSupported" />
+  </wsdl:message>
+  <wsdl:message name="isReady" />
+  <wsdl:message name="InputParametersException">
+    <wsdl:part name="InputParametersException" element="tns:InputParametersException" />
+  </wsdl:message>
+  <wsdl:message name="test">
+    <wsdl:part name="params" element="tns:testRequest" />
+  </wsdl:message>
+  <wsdl:message name="isHaveItsResponse">
+    <wsdl:part name="isHaveIts" element="tns:isHaveIts" />
+  </wsdl:message>
+  <wsdl:message name="listbp">
+    <wsdl:part name="params" element="tns:listbp" />
+  </wsdl:message>
+  <wsdl:message name="isHaveIts">
+    <wsdl:part name="isHaveIts" element="tns:isHaveIts" />
+  </wsdl:message>
+  <wsdl:message name="process">
+    <wsdl:part name="params" element="tns:processRequest" />
+  </wsdl:message>
+  <wsdl:message name="isReadyResponse">
+    <wsdl:part name="isReadyResponse" element="tns:isReadyResponse" />
+  </wsdl:message>
+  <wsdl:message name="isConfigurationSupportedResponse">
+    <wsdl:part name="isConfigurationSupportedResponse" element="tns:isConfigurationSupportedResponse" />
+  </wsdl:message>
+  <wsdl:message name="sendmailtonetResponse">
+    <wsdl:part name="params" element="tns:processResponse" />
+  </wsdl:message>
+  <wsdl:message name="listbpResponse">
+    <wsdl:part name="params" element="tns:listbp" />
+  </wsdl:message>
+  <wsdl:message name="processResponse">
+    <wsdl:part name="params" element="tns:processResponse" />
+  </wsdl:message>
+  <wsdl:portType name="WebItsService">
+    <wsdl:operation name="isConfigurationSupported">
+      <wsdl:input name="isConfigurationSupported" message="tns:isConfigurationSupported" />
+      <wsdl:output name="isConfigurationSupportedResponse" message="tns:isConfigurationSupportedResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="sendmailtonet">
+      <wsdl:input name="sendmailtonet" message="tns:sendmailtonet" />
+      <wsdl:output name="sendmailtonetResponse" message="tns:sendmailtonetResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="listbp">
+      <wsdl:input name="listbp" message="tns:listbp" />
+      <wsdl:output name="listbpResponse" message="tns:listbpResponse" />
+      <wsdl:fault name="InputParametersException" message="tns:InputParametersException" />
+    </wsdl:operation>
+    <wsdl:operation name="test">
+      <wsdl:input name="test" message="tns:test" />
+      <wsdl:output name="testResponse" message="tns:testResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="process">
+      <wsdl:input name="process" message="tns:process" />
+      <wsdl:output name="processResponse" message="tns:processResponse" />
+      <wsdl:fault name="InputParametersException" message="tns:InputParametersException" />
+    </wsdl:operation>
+    <wsdl:operation name="isHaveIts">
+      <wsdl:input name="isHaveIts" message="tns:isHaveIts" />
+      <wsdl:output name="isHaveItsResponse" message="tns:isHaveItsResponse" />
+    </wsdl:operation>
+    <wsdl:operation name="isReady">
+      <wsdl:input name="isReady" message="tns:isReady" />
+      <wsdl:output name="isReadyResponse" message="tns:isReadyResponse" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="WebItsServiceImplServiceSoapBinding" type="tns:WebItsService">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="isConfigurationSupported">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="isConfigurationSupported">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="isConfigurationSupportedResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="sendmailtonet">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="sendmailtonet">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="sendmailtonetResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="listbp">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="listbp">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="listbpResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="InputParametersException">
+        <soap:fault use="literal" name="InputParametersException" namespace="" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="test">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="test">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="testResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="process">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="process">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="processResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="InputParametersException">
+        <soap:fault use="literal" name="InputParametersException" namespace="" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="isHaveIts">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="isHaveIts">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="isHaveItsResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="isReady">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="isReady">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="isReadyResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="WebItsServiceImplService">
+    <wsdl:port name="WebItsServicePort" binding="tns:WebItsServiceImplServiceSoapBinding">
+      <soap:address location="https://webits.1c.ru/services/WebItsSimpleService" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
