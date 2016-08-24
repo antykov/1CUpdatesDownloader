@@ -1,8 +1,7 @@
-﻿using SharpCompress.Common;
-using SharpCompress.Reader;
+﻿using ICSharpCode.SharpZipLib.Zip;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace _1CUpdatesDownloader
@@ -20,15 +19,20 @@ namespace _1CUpdatesDownloader
               int nSize,
               string lpFilename);
 
-        public static long GetVersionAsLong(string version)
+        public static long GetVersionAsLong(string version, char? separator = null)
         {
-            string[] split = version.Split(Conf1CUpdateSettings.VersionSeparator);
+            string[] split = version.Split((separator == null) ? Conf1CUpdateSettings.VersionSeparator : (char)separator);
             long lVersion = 0, lVersionPart = 0;
             for (int i = 0; i < split.Length; i++)
                 if (Int64.TryParse(split[i], out lVersionPart))
                     lVersion += lVersionPart * (long)Math.Pow(10, 4 * (split.Length - i - 1));
 
             return lVersion;
+        }
+
+        public static bool CompareMajorMinorVersions(string version1, char separator1, string version2, char separator2)
+        {
+            return String.Join("", version1.Split(separator1).Take(2).ToArray<string>()) == String.Join("", version2.Split(separator2).Take(2).ToArray<string>());
         }
 
         public static bool CheckPlatformUpdateNecessity(string dir, string newVersion)
@@ -65,28 +69,27 @@ namespace _1CUpdatesDownloader
 
         public static void ExtractArchiveToDirectory(string archive, string destination)
         {
-            if (!Directory.Exists(destination))
-                Directory.CreateDirectory(destination);
-
-            using (FileStream fls = new FileStream(archive, FileMode.Open, FileAccess.Read))
+            try
             {
-                IReader reader = ReaderFactory.Open(fls);
-                if (null != reader)
-                {
-                    while (reader.MoveToNextEntry())
-                    {
-                        if (!reader.Entry.IsDirectory)
-                        {
-                            string path = Path.Combine(destination, RemovePathInvalidChars(reader.Entry.FilePath));
-                            new FileInfo(path).Directory.Create();
-                            using (FileStream fls_out = new FileStream(path, FileMode.Create, FileAccess.Write))
-                            {
-                                reader.WriteEntryTo(fls_out);
-                            }
-                        }
-                    }
-                }
+                FastZip fastZip = new FastZip();
+                fastZip.ExtractZip(archive, destination, null);
+            } catch (Exception e)
+            {
+                Common.LogException(e, $"Ошибка при разархивировании {archive} в {destination}");
             }
+        }
+
+        public static void CopyDirectoryRecursively(string source, string destination)
+        {
+            string destinationSubdir = Path.Combine(destination, Path.GetFileName(source));
+            if (!Directory.Exists(destinationSubdir))
+                Directory.CreateDirectory(destinationSubdir);
+
+            foreach (var file in Directory.GetFiles(source))
+                File.Copy(file, Path.Combine(destinationSubdir, Path.GetFileName(file)), true);
+
+            foreach (var dir in Directory.GetDirectories(source))
+                CopyDirectoryRecursively(dir, destinationSubdir);
         }
 
         public static string RemovePathInvalidChars(string path)

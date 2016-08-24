@@ -13,40 +13,6 @@ namespace _1CUpdatesDownloader
     {
         static private int lastDownloadPercent;
 
-        private string versionField;
-
-        public string Version
-        {
-            get
-            {
-                return this.versionField;
-            }
-            set
-            {
-                this.versionField = "";
-
-                string[] split = value.Split('.');
-                if (split.Length == 4)
-                {
-                    for (int i = 0, j = 0; i < 4; i++)
-                    {
-                        if (!Int32.TryParse(split[i], out j))
-                        {
-                            this.versionField = "";
-                            return;
-                        }
-                    }
-
-                    this.versionField = value;
-                }
-            }
-        }
-
-        public Platform1CClass()
-        {
-            //this.Version = Common.GetLatestConfVersion(Settings.Default.DownloadPath, '.');
-        }
-
         public static void UpdatePlatform(Conf1CUpdateSettings confSettings, string lastConfVersion)
         {
             Common.Log($"--------------------------------------------------------------------------------", ConsoleColor.Yellow);
@@ -111,8 +77,10 @@ namespace _1CUpdatesDownloader
                     string downloadFileName = Path.Combine(downloadPath, Path.GetFileName(platformResult.downloadUrl));
 
                     wc.DownloadProgressChanged += Wc_DownloadProgressChanged;
+                    wc.DownloadDataCompleted += Wc_DownloadDataCompleted;
                     wc.Credentials = new NetworkCredential(confSettings.Users1CLogin, confSettings.Users1CPassword);
                     wc.DownloadFileTaskAsync(new Uri(platformResult.downloadUrl), downloadFileName).Wait();
+
                     Common.Log("\nПолучение файла с обновлением платформы успешно завершено");
 
                     Common.Log("Разархивирование полученного обновления платформы...");
@@ -128,6 +96,11 @@ namespace _1CUpdatesDownloader
             }
         }
 
+        private static void Wc_DownloadDataCompleted(object sender, DownloadDataCompletedEventArgs e)
+        {
+            lastDownloadPercent = 100;
+        }
+
         private static void Wc_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
             if (lastDownloadPercent >= e.ProgressPercentage)
@@ -135,7 +108,7 @@ namespace _1CUpdatesDownloader
 
             lastDownloadPercent = e.ProgressPercentage;
 
-            Common.Log($"Получение файла {lastDownloadPercent}% ({e.BytesReceived} байт из {e.TotalBytesToReceive})", ConsoleColor.White, false);
+            Common.Log($"--> Получение файла {lastDownloadPercent}% ({e.BytesReceived} байт из {e.TotalBytesToReceive})", ConsoleColor.White, false);
         }
     }
 }

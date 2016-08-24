@@ -38,7 +38,7 @@ namespace _1CUpdatesDownloader
             }
 
             if (confs1C.Count > 0)
-                Platform1CClass.UpdatePlatform(confs1C[0].ConfSettings, confs1C[0].LastExistingVersion);
+                Platform1CClass.UpdatePlatform(confs1C[0].ConfSettings, confs1C[0].CorrectExistingVersion);
         }
 
     }

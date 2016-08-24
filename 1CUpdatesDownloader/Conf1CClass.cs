@@ -10,15 +10,17 @@ namespace _1CUpdatesDownloader
 {
     class ConfUpdateInfo
     {
-        public string Version { get; set; }
-        public long VersionAsLong { get; set; }
-        public string DirectoryVersion { get; set; }
-        public string FileURL { get; set; }
+        public string Version;
+        public long VersionAsLong;
+        public List<string> FromVersions;
+        public string DirectoryVersion;
+        public string FileURL;
 
-        public ConfUpdateInfo(string version, string fileURL = "")
+        public ConfUpdateInfo(string version, string fileURL, List<string> fromVersions)
         {
             this.Version = version;
             this.VersionAsLong = Common.GetVersionAsLong(version);
+            this.FromVersions = (fromVersions == null) ? new List<string>() : new List<string>(fromVersions);
             this.DirectoryVersion = version.Replace(Conf1CUpdateSettings.VersionSeparator, Conf1CUpdateSettings.DirectoryVersionSeparator);
             this.FileURL = fileURL;
         }
@@ -35,25 +37,16 @@ namespace _1CUpdatesDownloader
         public SortedList<long, SortedList<long, ConfUpdateInfo>> AllUpdatesInfoByTarget;
         public SortedList<long, ConfUpdateInfo> AllUpdatesInfo;
         public SortedList<long, ConfUpdateInfo> ExistingUpdatesInfo;
+        public long CorrectExistingVersionAsLong;
 
-        public string LastExistingVersion
+        public string CorrectExistingVersion
         {
             get
             {
                 if (ExistingUpdatesInfo.Count == 0)
                     return "";
                 else
-                    return ExistingUpdatesInfo.ElementAt(ExistingUpdatesInfo.Count - 1).Value.Version;
-            }
-        }
-        public long LastExistingVersionAsLong
-        {
-            get
-            {
-                if (ExistingUpdatesInfo.Count == 0)
-                    return 0;
-                else
-                    return ExistingUpdatesInfo.ElementAt(ExistingUpdatesInfo.Count - 1).Key;
+                    return ExistingUpdatesInfo[CorrectExistingVersionAsLong].Version;
             }
         }
 
@@ -112,7 +105,7 @@ namespace _1CUpdatesDownloader
                 {
                     string version = dir.Name.Replace(Conf1CUpdateSettings.DirectoryVersionSeparator, Conf1CUpdateSettings.VersionSeparator);
                     if (IsCorrectUpdate(dir.FullName, version))
-                        ExistingUpdatesInfo.Add(Common.GetVersionAsLong(version), new ConfUpdateInfo(version));
+                        ExistingUpdatesInfo.Add(Common.GetVersionAsLong(version), new ConfUpdateInfo(version, "", null));
                     else
                         directoriesForDelete.Add(dir.FullName);
                 }
@@ -186,11 +179,11 @@ namespace _1CUpdatesDownloader
                             if (AllUpdatesInfo.IndexOfKey(updateInfoKey) != -1)
                                 continue;
 
-                            AllUpdatesInfo.Add(updateInfoKey, new ConfUpdateInfo((string)updateValues["v8u:version"], (string)updateValues["v8u:file"]));
+                            AllUpdatesInfo.Add(updateInfoKey, new ConfUpdateInfo((string)updateValues["v8u:version"], (string)updateValues["v8u:file"], targetVersionsList));
 
                             foreach (var targetVersion in targetVersionsList)
                             {
-                                ConfUpdateInfo updateInfo = new ConfUpdateInfo((string)updateValues["v8u:version"], (string)updateValues["v8u:file"]);
+                                ConfUpdateInfo updateInfo = new ConfUpdateInfo((string)updateValues["v8u:version"], (string)updateValues["v8u:file"], null);
                                 long targetKey = Common.GetVersionAsLong(targetVersion);
                                 if (AllUpdatesInfoByTarget.IndexOfKey(targetKey) == -1)
                                     AllUpdatesInfoByTarget.Add(targetKey, new SortedList<long, ConfUpdateInfo>());
@@ -212,13 +205,13 @@ namespace _1CUpdatesDownloader
             if (ExistingUpdatesInfo.Count == 0 || AllUpdatesInfoByTarget.Count == 0)
                 return;
 
-            long correctVersion = ExistingUpdatesInfo.ElementAt(0).Key;
+            CorrectExistingVersionAsLong = ExistingUpdatesInfo.ElementAt(0).Key;
             int targetIndex;
             ConfUpdateInfo updInfo;
             SortedList<long, ConfUpdateInfo> targetValues;
             for (int i = 1; i < ExistingUpdatesInfo.Count; i++)
             {
-                targetIndex = AllUpdatesInfoByTarget.IndexOfKey(correctVersion);
+                targetIndex = AllUpdatesInfoByTarget.IndexOfKey(CorrectExistingVersionAsLong);
                 if (targetIndex == -1)
                     break;
                 targetValues = AllUpdatesInfoByTarget.ElementAt(targetIndex).Value;
@@ -228,25 +221,51 @@ namespace _1CUpdatesDownloader
                 if (targetValues.ElementAt(targetValues.Count - 1).Key != updInfo.VersionAsLong)
                     break;
 
-                correctVersion = updInfo.VersionAsLong;
+                CorrectExistingVersionAsLong = updInfo.VersionAsLong;
             }
+        }
+
+        void SyncTemplatesWithDownloads()
+        {
+            Common.Log("Синхронизация каталога шаблонов с каталогом загрузки...");
 
             try
             {
-                int firstIncorrectIndex = ExistingUpdatesInfo.IndexOfValue(ExistingUpdatesInfo[correctVersion]) + 1;
-                int removeCount = ExistingUpdatesInfo.Count - firstIncorrectIndex;
-                while (removeCount > 0)
+                FillExistingUpdatesInfo();
+
+                ConfUpdateInfo firstExistingUpdate = ExistingUpdatesInfo.First().Value;
+                ConfUpdateInfo lastAvailableUpdate = AllUpdatesInfo.Last().Value;
+                string confTemplateDir = Path.Combine(AppSettings.settings.TemplatesDirectory, Path.GetDirectoryName(Path.GetDirectoryName(lastAvailableUpdate.FileURL)));
+                if (!Directory.Exists(confTemplateDir))
+                    throw new Exception($"Не найден каталог с шаблонами конфигурации {confTemplateDir}");
+
+                var deleteQuery = Directory.GetDirectories(confTemplateDir, "*_*_*_*")
+                    .Select(s => Path.GetFileName(s))
+                    .Where(w => Common.CompareMajorMinorVersions(lastAvailableUpdate.Version, '.', w, '_') &&
+                                Common.GetVersionAsLong(w, '_') > firstExistingUpdate.VersionAsLong &&
+                                !ExistingUpdatesInfo.ContainsKey(Common.GetVersionAsLong(w, '_')));
+                foreach (var dir in deleteQuery)
                 {
-                    Common.Log($"Удаление обновления, нарушающего последовательность: {ExistingUpdatesInfo.ElementAt(firstIncorrectIndex).Value.Version}");
-                    Directory.Delete(Path.Combine(fullDownloadDirectory, ExistingUpdatesInfo.ElementAt(firstIncorrectIndex).Value.DirectoryVersion), true);
-                    ExistingUpdatesInfo.RemoveAt(firstIncorrectIndex);
-                    removeCount--;
+                    Common.Log($"--> Удаление каталога {Path.Combine(confTemplateDir, dir)}");
+                    Directory.Delete(Path.Combine(confTemplateDir, dir), true);
+                }
+
+                List<string> templatesDirs = Directory.GetDirectories(confTemplateDir, "*_*_*_*")
+                    .Select(s => Path.GetFileName(s).Replace('_', '.'))
+                    .Where(w => Common.CompareMajorMinorVersions(lastAvailableUpdate.Version, '.', w, '.') &&
+                                Common.GetVersionAsLong(w) >= firstExistingUpdate.VersionAsLong).ToList<string>();
+                var copyQuery = ExistingUpdatesInfo
+                    .Select(s => s.Value)
+                    .Where(w => templatesDirs.IndexOf(w.Version) == -1);
+                foreach (var confUpdate in copyQuery)
+                {
+                    Common.Log($"--> Копирование каталога {Path.Combine(confTemplateDir, confUpdate.DirectoryVersion)}");
+                    Common.CopyDirectoryRecursively(Path.Combine(AppSettings.settings.DownloadDirectory, ConfSettings.DownloadDirectory, confUpdate.DirectoryVersion), confTemplateDir);
                 }
             }
-            catch (Exception E)
+            catch (Exception e)
             {
-                Common.LogException(E, $"Ошибка при восстановлении последовательности обновлений конфигурации {ConfSettings.ConfDescription}");
-                throw new Exception();
+                Common.LogException(e);
             }
         }
 
@@ -254,7 +273,7 @@ namespace _1CUpdatesDownloader
         {
             try
             {
-                Common.Log($"Получение обновлений для конфигурации {ConfSettings.ConfDescription} ({LastExistingVersion})...");
+                Common.Log($"Получение обновлений для конфигурации {ConfSettings.ConfDescription} ({CorrectExistingVersion})...");
                 if (AllUpdatesInfoByTarget.Count == 0)
                 {
                     Common.Log($"Список обновлений пуст! Возможно произошла ошибка при получении списка обновлений!!!", ConsoleColor.Red);
@@ -262,13 +281,13 @@ namespace _1CUpdatesDownloader
                 }
 
                 long versionAsLong;
-                if (LastExistingVersion == "")
+                if (CorrectExistingVersion == "")
                     versionAsLong = AllUpdatesInfoByTarget.ElementAt(0).Key;
                 else
-                    versionAsLong = LastExistingVersionAsLong;
+                    versionAsLong = CorrectExistingVersionAsLong;
                 if (AllUpdatesInfo.ElementAt(AllUpdatesInfo.Count - 1).Key == versionAsLong)
                 {
-                    Common.Log($"Версия {LastExistingVersion} является актуальной!", ConsoleColor.Green);
+                    Common.Log($"Версия {CorrectExistingVersion} является актуальной!", ConsoleColor.Green);
                     return;
                 }
                 if (AllUpdatesInfoByTarget.IndexOfKey(versionAsLong) == -1)
@@ -290,22 +309,33 @@ namespace _1CUpdatesDownloader
                 {
                     foreach (var updateInfo in updatesSequence)
                     {
+                        if (ExistingUpdatesInfo.ContainsKey(updateInfo.VersionAsLong))
+                        {
+                            ExistingUpdatesInfo.Remove(updateInfo.VersionAsLong);
+                            continue;
+                        }
+
                         DownloadConfUpdate(updateInfo);
                     }
-                }
-                catch (Exception E)
-                {
-                    foreach (var updateInfo in updatesSequence)
+
+                    for (int i = ExistingUpdatesInfo.IndexOfKey(CorrectExistingVersionAsLong) + 1; i < ExistingUpdatesInfo.Count; i++)
                     {
                         try
                         {
-                            if (Directory.Exists(Path.Combine(fullDownloadDirectory, updateInfo.DirectoryVersion)))
-                                Directory.Delete(Path.Combine(fullDownloadDirectory, updateInfo.DirectoryVersion), true);
-
+                            Common.Log($"Удаление обновления, нарушающего последовательность: {ExistingUpdatesInfo.ElementAt(i).Value.Version}");
+                            Directory.Delete(Path.Combine(fullDownloadDirectory, ExistingUpdatesInfo.ElementAt(i).Value.DirectoryVersion), true);
                         }
-                        catch { }
+                        catch (Exception e)
+                        {
+                            Common.LogException(e);
+                        }
                     }
 
+                    if (Directory.Exists(AppSettings.settings.TemplatesDirectory) && AppSettings.settings.SyncTemplatesWithDownloads)
+                        SyncTemplatesWithDownloads();
+                }
+                catch (Exception E)
+                {
                     throw E;
                 }
             }
@@ -335,37 +365,39 @@ namespace _1CUpdatesDownloader
                 wc.Headers.Add("Accept-Charset", "utf-8");
                 wc.Headers.Add("user-agent", Conf1CUpdateSettings.UserAgent);
                 wc.DownloadProgressChanged += Wc_DownloadProgressChanged;
-                wc.DownloadFileCompleted += Wc_DownloadFileCompleted;
+                wc.DownloadDataCompleted += Wc_DownloadDataCompleted;
                 wc.DownloadFileTaskAsync(new Uri(Conf1CUpdateSettings.TemplatesDownloadPath + updateInfo.FileURL), filePath).Wait();
+                System.Threading.Thread.Sleep(1000);
+
+                lastDownloadPercent = 100;
+                Common.Log($"\r--> Получение файла 100% ({totalBytesToReceive} байт из {totalBytesToReceive})", ConsoleColor.White);
 
                 Common.ExtractArchiveToDirectory(filePath, dir);
 
                 if (Directory.Exists(AppSettings.settings.TemplatesDirectory))
                 {
-                    dir = Path.GetDirectoryName(Path.Combine(AppSettings.settings.TemplatesDirectory, updateInfo.FileURL));
-                    if (Directory.Exists(dir))
-                        Directory.Delete(dir, true);
-                    Common.ExtractArchiveToDirectory(filePath, dir);
+                    string tmpltDir = Path.GetDirectoryName(Path.Combine(AppSettings.settings.TemplatesDirectory, updateInfo.FileURL));
+                    Common.ExtractArchiveToDirectory(filePath, tmpltDir);
                 }
 
                 File.Delete(filePath);
             }
         }
 
-        private void Wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
+        private void Wc_DownloadDataCompleted(object sender, DownloadDataCompletedEventArgs e)
         {
-            Common.Log($"\rПолучение файла 100% ({totalBytesToReceive} байт из {totalBytesToReceive})", ConsoleColor.White);
+            lastDownloadPercent = 100;
         }
 
         private void Wc_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
-            if (lastDownloadPercent >= e.ProgressPercentage)
+            if (lastDownloadPercent >= e.ProgressPercentage || lastDownloadPercent >= 95)
                 return;
 
             lastDownloadPercent = e.ProgressPercentage;
             totalBytesToReceive = e.TotalBytesToReceive;
 
-            Common.Log($"Получение файла {lastDownloadPercent}% ({e.BytesReceived} байт из {e.TotalBytesToReceive})", ConsoleColor.White, false);
+            Common.Log($"\r--> Получение файла {lastDownloadPercent}% ({e.BytesReceived} байт из {e.TotalBytesToReceive})", ConsoleColor.White, false);
         }
     }
 }

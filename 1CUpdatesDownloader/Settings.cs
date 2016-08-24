@@ -19,20 +19,22 @@ namespace _1CUpdatesDownloader
         static public string UpdatesInfoZIPFileName = "v8upd11.zip";
         static public string UpdatesInfoXMLFileName = "v8cscdsc.xml";
 
-        public string ConfName { get; set; }
-        public string ConfDescription { get; set; }
-        public string ConfUpdateServerPath { get; set; }
-        public string DownloadDirectory { get; set; }
-        public string Users1CLogin { get; set; }
-        public string Users1CPassword { get; set; }
+        public string ConfName;
+        public string ConfDescription;
+        public string ConfUpdateServerPath;
+        public string DownloadDirectory;
+        public string Users1CLogin;
+        public string Users1CPassword;
     }
 
     public class Settings
     {
         [XmlElement]
-        public string DownloadDirectory { get; set; }
+        public string DownloadDirectory;
         [XmlElement]
-        public string TemplatesDirectory { get; set; }
+        public string TemplatesDirectory;
+        [XmlElement]
+        public bool SyncTemplatesWithDownloads;
         [XmlArray("Confs1C"), XmlArrayItem("Conf1CUpdateSettings")]
         public List<Conf1CUpdateSettings> Confs1C;
 
@@ -83,7 +85,8 @@ namespace _1CUpdatesDownloader
             Settings templateSettings = new Settings
             {
                 DownloadDirectory = "Download directory",
-                TemplatesDirectory = "Templates directory"
+                TemplatesDirectory = "Templates directory",
+                SyncTemplatesWithDownloads = true
             };
             templateSettings.Confs1C.Add(new Conf1CUpdateSettings {
                 ConfName = "Configuration name (БухгалтерияПредприятия)",
