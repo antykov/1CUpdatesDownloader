@@ -1,4 +1,5 @@
-﻿using ICSharpCode.SharpZipLib.Zip;
+﻿using ICSharpCode.SharpZipLib.Core;
+using ICSharpCode.SharpZipLib.Zip;
 using System;
 using System.IO;
 using System.Linq;
@@ -71,9 +72,46 @@ namespace _1CUpdatesDownloader
         {
             try
             {
-                FastZip fastZip = new FastZip();
-                fastZip.ExtractZip(archive, destination, null);
-            } catch (Exception e)
+                using (ZipInputStream s = new ZipInputStream(File.OpenRead(archive)))
+                {
+                    ZipEntry theEntry;
+                    while ((theEntry = s.GetNextEntry()) != null)
+                    {
+                        string directoryName = Path.GetDirectoryName(RemovePathInvalidChars(theEntry.Name));
+
+                        if (directoryName.Length > 0)
+                        {
+                            directoryName = Path.Combine(destination, directoryName);
+                            Directory.CreateDirectory(directoryName);
+                        }
+                        else
+                            directoryName = destination;
+
+                        string fileName = Path.Combine(directoryName, Path.GetFileName(RemovePathInvalidChars(theEntry.Name)));
+                        if (fileName != String.Empty)
+                        {
+                            using (FileStream streamWriter = File.Create(fileName))
+                            {
+                                int size = 2048;
+                                byte[] data = new byte[2048];
+                                while (true)
+                                {
+                                    size = s.Read(data, 0, data.Length);
+                                    if (size > 0)
+                                    {
+                                        streamWriter.Write(data, 0, size);
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                } catch (Exception e)
             {
                 Common.LogException(e, $"Ошибка при разархивировании {archive} в {destination}");
             }
