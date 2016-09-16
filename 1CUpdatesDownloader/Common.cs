@@ -79,13 +79,12 @@ namespace _1CUpdatesDownloader
                     {
                         string directoryName = Path.GetDirectoryName(RemovePathInvalidChars(theEntry.Name));
 
-                        if (directoryName.Length > 0)
-                        {
-                            directoryName = Path.Combine(destination, directoryName);
-                            Directory.CreateDirectory(directoryName);
-                        }
-                        else
+                        if (String.IsNullOrWhiteSpace(directoryName))
                             directoryName = destination;
+                        else
+                            directoryName = Path.Combine(destination, directoryName);
+
+                        Directory.CreateDirectory(directoryName);
 
                         string fileName = Path.Combine(directoryName, Path.GetFileName(RemovePathInvalidChars(theEntry.Name)));
                         if (fileName != String.Empty)
